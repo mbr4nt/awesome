@@ -36,20 +36,31 @@
 
 package $dynamicPackageName;
 
-public class AweGenericSubsetData { 
-    
-    private str label : public readable;
-    private Object value : public readable;
-    public constructor auto();
+public class AweGeometry {
+    public constructor() {
+    }   
 
-    public str toS() { 
-        return this.label;
+    extend public Primitive3D medium3D() {
+        return null;
     }
 
-    public bool equal(Object other, EqualEnv env=EqualEnv()) {
-        if(other as AweGenericSubsetData) {
-            return other.value.equal(this.value);
-        }
-        return this.value.equal(other, env); 
+    extend public Primitive3D super3D() {
+        return medium3D();
+    }
+
+    extend public Graph graph() {
+        return null;
+    }
+    
+    final public Primitive3D applyMaterial(Primitive3D p, Material material) { 
+        if (!material) { return p; }
+        material.apply(p, FetchEnv3D());
+        return p;
+    }
+
+    final public Graph applyMaterial(Graph g, Material material) { 
+        if (!material) { return g; }
+        g.setFillColor(material.color2D); 
+        return g;
     }
 }

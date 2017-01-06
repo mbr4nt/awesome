@@ -37,11 +37,10 @@
 package $dynamicPackageName;
 use cm.syntax;
 
-/// Delegate de change para prop bag (invalidade product)
-/// HUB
 public class AweDynamicPropBag : abstract {
     private Snapper controller : public readable;
     public constructor auto();
+    public constructor() { }
     extend public PropState[] list()  : abstract { }
     extend public Object get(str key) : abstract { }
     extend public void set(str key, Object value) : abstract { }

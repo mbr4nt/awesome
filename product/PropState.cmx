@@ -43,7 +43,6 @@ public class PropState {
     private Object value : public readable;
     private str title : public readable;
     private SubSet domain : public readable;
-    private bool enabled : public readable;
     public constructor auto();
     public str toS() { 
         return "[k:" # key # "-v:" # value # "-t:" # title # "-d:" # domain # "]";
