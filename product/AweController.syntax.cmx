@@ -75,9 +75,8 @@ public definition @visibility AweController @controllerName=id
             super(..);
         } 
 
-        /// Todo: improve on this
         public box localBound() {
-            return product.get3D(FetchEnv3D(detailLevel3D.lousy)).bound;
+            return product.localBound;
         }
 
     };
