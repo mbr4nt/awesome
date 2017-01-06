@@ -38,14 +38,6 @@ package $dynamicPackageName;
 use cm.syntax;
 use cm.runtime;
 
-public Object getRealValueFrom(Object o) {
-    if (!o) { return o; }
-    if (o as AweGenericSubsetData) { 
-        return o.value;
-    }
-    return o;
-}
-
 public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundleDelegates=id 
     @classRef=type @modelType=type { 
 
@@ -108,8 +100,8 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
                 setFieldValue = block { 
                     return this.@realFieldName = value;
                 };
-                secondaryValue = member { 
-                    private @domainType @rawSecondaryValue = getFirstDomainFrom(@realFieldName).@domainType;
+                secondaryValue = member {
+                    private @domainType @rawSecondaryValue = getFirstDomainFrom(this, @realFieldName).@domainType;
                 };
                 fieldSetter = block {
                     this.@fieldDomainValueMethod = value;
@@ -270,13 +262,6 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
                 return result;
             }
 
-            final private Object getFirstDomainFrom(str realFieldName) {
-                for (f in this.class.fields) if (f.name == realFieldName) { 
-                    return f.domain;
-                }
-                return null;
-            }
-
             private bool _initializedInnerProps = false;
             public void initProps() {
                 if (this._initializedInnerProps) { return; }
@@ -308,10 +293,25 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
     };
 }
 
-private bool classHasMethodWithName(str searchFor, Class where) { 
+public bool classHasMethodWithName(str searchFor, Class where) { 
     for(method in where.methods(false))
         if(method.name == searchFor) {
             return true;
     }
     return false;
+}
+
+public Object getRealValueFrom(Object o) {
+    if (!o) { return o; }
+    if (o as AweGenericSubsetData) { 
+        return o.value;
+    }
+    return o;
+}
+
+public Object getFirstDomainFrom(Object source, str realFieldName) {
+    for (f in source.class.fields) if (f.name == realFieldName) { 
+        return f.domain;
+    }
+    return null;
 }
