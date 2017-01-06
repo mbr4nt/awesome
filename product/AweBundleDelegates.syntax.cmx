@@ -144,10 +144,6 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
                     @getDomainLogic;
                 }
 
-                final private @fieldType @fieldValue() { 
-                    @getFieldValue;
-                }
-
                 final private @fieldType @fieldValue=(@fieldType value) { 
                     @setFieldValue;
                 }
@@ -167,11 +163,15 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
 
                 extend public @fieldType @fieldName=(@fieldType newValue) {
 
-                    if (newValue.equal(this.@fieldValue)) { 
-                        return this.@fieldValue;
+                    if (newValue.equal(this.@fieldName)) { 
+                        return this.@fieldName;
                     }
 
-                    return this.@fieldValue = @fieldChangedMethod(this.@fieldValue, newValue);
+                    return this.@fieldValue = @fieldChangedMethod(this.@fieldName, newValue);
+                }
+                
+                final private @fieldType @fieldName() { 
+                    @getFieldValue;
                 }
 
                 extend public str @fieldTitleMethod() { 
@@ -234,7 +234,7 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
 
             getterLogic << block { 
                 if (key == @fieldName) { 
-                    return this.@fieldValue;
+                    return this.@fieldName;
                 }
             };
 
