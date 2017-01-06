@@ -106,7 +106,7 @@ public class AweProduct extends Snapper {
     }
 
     extend public void buildGraph() {
-        
+        ensureBuilt();
         graph = new AweGraph();
 
         for(geometry in geometries) {
