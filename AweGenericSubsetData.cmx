@@ -36,7 +36,7 @@
 
 package $dynamicPackageName;
 
-public class AweGenericSubsetData { 
+public class AweGenericSubSetData { 
     
     private str label : public readable;
     private Object value : public readable;
@@ -47,7 +47,7 @@ public class AweGenericSubsetData {
     }
 
     public bool equal(Object other, EqualEnv env=EqualEnv()) {
-        if(other as AweGenericSubsetData) {
+        if(other as AweGenericSubSetData) {
             return other.value.equal(this.value);
         }
         return this.value.equal(other, env); 

@@ -36,7 +36,7 @@
 
 package $dynamicPackageName;
 
-public class AweBoolSubset extends AweGenericSubset { 
+public class AweBoolSubSet extends AweGenericSubSet { 
     public constructor() { 
         super("Yes", true);
         this.add("No", false);

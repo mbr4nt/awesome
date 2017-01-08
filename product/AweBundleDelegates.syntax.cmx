@@ -69,8 +69,22 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
         var setDomainFieldMethod = "set" # fieldNameU # "_domainField";
         var privateFinalFieldDomainMethod = fieldName # "_realDomain";
         var hasDomain = !field.domain.equal(null);
-        SType domainType(hasDomain ? field.domain.class : field.type); 
-        var fieldType = hasDomain ? field.type : Object; 
+        
+        SType domainType;
+        Type fieldType;
+        if (hasDomain) { 
+            var rawDomainClass = field.domain;
+            if (rawDomainClass as Type) { 
+                domainType = SType(rawDomainClass);
+            } else { 
+                domainType = SType(field.domain.class);
+            }
+            fieldType = field.type;
+        } else { 
+            domainType = SType(field.type);
+            fieldType = Object;
+        }
+
         if (!classHasMethodWithName(fieldChangedMethod, c)) {
 
             SStatement titleLogic = block { 
@@ -303,7 +317,7 @@ public bool classHasMethodWithName(str searchFor, Class where) {
 
 public Object getRealValueFrom(Object o) {
     if (!o) { return o; }
-    if (o as AweGenericSubsetData) { 
+    if (o as AweGenericSubSetData) { 
         return o.value;
     }
     return o;
