@@ -58,11 +58,20 @@ public class AweTestSnapper extends Snapper {
         if(primitive3D) return primitive3D;
         return super(..);
     }
+
+    public box localBound() { 
+        return product.localBound;
+    }
+
 }
 
 /***********************************************************************
  * test functions
  ***********************************************************************/
+
+public void test(Snapper z) {
+    z.launch();
+}
 
 public void test(Graph g) {
     AweTestSnapper(graph=g).launch();
