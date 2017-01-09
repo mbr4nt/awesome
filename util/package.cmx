@@ -33,17 +33,20 @@
 
    END OF CETSC
 */
+
 package $dynamicPackageName;
 
-use $dynamicPackageName.product;
-use $dynamicPackageName.util;
+use cm.syntax;
 use cm.application;
 use cm.basic;
 use cm.core;
 use cm.core3D;
 use cm.draw;
+use cm.format.json;
 use cm.geometry;
 use cm.geometry2D.advanced;
-use cm.win;
+use cm.internet;
 use cm.io;
-
+use cm.io.util;
+use cm.subset;
+use cm.win;

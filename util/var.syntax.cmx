@@ -36,8 +36,6 @@
 
 package $dynamicPackageName;
 
-use cm.syntax;
-
 public member @visibility var @id=id @expr=['=' expr]? ';' { 
     SType memberType(expr.type, expr.src);
 

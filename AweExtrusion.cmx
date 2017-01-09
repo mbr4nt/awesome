@@ -1,0 +1,184 @@
+/** Configura CET Source Copyright Notice (CETSC)
+
+   This file contains Configura CM source code and is part of the
+   Configura CET Development Platform (CETDEV). Configura CM
+   is a programming language created by Configura Sverige AB.
+   Configura, Configura CET and Configura CM are trademarks of
+   Configura Sverige AB. Configura Sverige AB owns Configura CET,
+   Configura CM, and CETDEV.
+
+   Copyright (C) 2004 Configura Sverige AB, All rights reserved.
+
+   You can modify this source file under the terms of the Configura CET
+   Source Licence Agreement (CETSL) as published by Configura Sverige AB.
+
+   Configura Sverige AB has exclusive rights to all changes, modifications,
+   and corrections of this source file. Configura Sverige AB has exclusive
+   rights to any new source file containing material from this source file.
+   A new source file based on this source file or containing material from
+   this source file has to include this Configura CET Source Copyright Notice
+   in its full content. All changes, modifications, and corrections mentioned
+   above shall be reported to Configura Sverige AB within One Month from
+   the date that the modification occurred.
+
+   Configura CM is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the CETSL for more details.
+
+   You should have received a copy of the CETSL along with the CETDEV.
+   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   Tel +46 13377800, Fax +46 13377855,
+   Email: info@configura.com, www.configura.com
+
+   END OF CETSC
+*/
+
+package $dynamicPackageName;
+
+use cm.format.cm3D;
+use cm.geometry.advanced;
+
+public class AweExtrusion {
+    public APath2D profile = null;
+
+    public constructor(str profileName, str profileDir) {
+        this.profile = profileFromCm3d(profileName, profileDir);
+    }
+
+    public constructor(APath2D profile) {
+        this.profile = profile;
+    }
+
+    extend public Primitive3D horizontal(line2D horizontalLine, double height, angle startAngle = 0 deg, angle endAngle = 0 deg,
+                                         bool closeStart = true, bool closeEnd = true,
+                                         angle arcResolution = 15deg) {
+        Primitive3D prim = extrudeAlongLine(horizontalLine, this.profile, startAngle, endAngle, closeStart, closeEnd, arcResolution);
+        prim.move((0, 0, height));
+        prim.setDoubleSided(true);
+        return prim;
+    }
+
+    extend public Primitive3D path(APath2D extrudePath, bool vertical=false, angle profileRotation=0deg) {
+        profile.rotate(profileRotation);
+        Primitive3D prim = extrudePathAlongPath(profile, extrudePath, doubleSided = true);
+        if (vertical)
+            prim.setPosRot((0, 0, 0), orientation(0deg, 0deg, 90deg));
+        return prim;
+    }
+
+    extend public Primitive3D vertical(double position, double length, double height, angle normal=0deg) {
+        line2D l((length, 0));
+        Primitive3D prim = horizontal(l, 0);
+        point start = (position, 0, height);
+        //stand on end
+        prim.rotate((0, 1, 0), -90deg);
+        //rotate to point to normal
+        prim.rotate((0, 0, 1), normal);
+        //go to place
+        prim.move(start);
+        return prim;
+    }
+    
+    extend public Primitive3D simple(double length) {
+       var mesh = PolygonMesh3D(this.profile, length);
+
+       mesh.setDoubleSided(true);
+
+       return mesh;
+    }
+
+}
+
+public alias Extrusion = AweExtrusion;
+
+public class PathCursor {
+    public point2D cursor;
+    public APath2D path;
+
+    public constructor(point2D origin) {
+        cursor = origin;
+        path = APath2D(origin);
+    }
+
+    extend public void move(double x, double y) {
+        cursor += point2D(x, y);
+        makePoint();
+    }
+
+    extend private void makePoint() {
+        path.lineTo(cursor);
+    }
+
+    extend public APath2D closePath() {
+        path.close();
+        return path;
+    }
+}
+
+public line2D[] cutoutGeometriesFromLine2D(line2D l, Primitive3D[] geometries, bool shaveTips = false) {
+    line2D[] cutLines();
+    for (geometry in geometries) {
+        box bound = geometry.bound();
+        line2D boxLineOnTheFloor = line2D((bound.p0.x, 0), (bound.p1.x, 0));
+        cutLines << boxLineOnTheFloor;
+    }
+
+    point2D[] allPoints();
+
+    bool anyCutLineRemovesOriginalLineP0 = false;
+    bool anyCutLineRemovesOriginalLineP1 = false;
+
+    for (cutLine in cutLines) {
+        if (cutLine.p0 !in allPoints and l.curveContains(cutLine.p0) and l.p0 != cutLine.p0)
+            allPoints << cutLine.p0;
+        if (cutLine.p1 !in allPoints and l.curveContains(cutLine.p1) and l.p1 != cutLine.p1)
+            allPoints << cutLine.p1;
+
+        if (cutLine.p0.x < l.p0.x and cutLine.p1.x > l.p0.x) anyCutLineRemovesOriginalLineP0 = true;
+        if (cutLine.p0.x < l.p1.x and cutLine.p1.x > l.p1.x) anyCutLineRemovesOriginalLineP1 = true;
+    }
+
+    if (!anyCutLineRemovesOriginalLineP0) allPoints << l.p0;
+    if (!anyCutLineRemovesOriginalLineP1) allPoints << l.p1;
+
+    allPoints.sort();
+    line2D[] allSegments();
+
+    if (allPoints.count == 0) {
+        return [line2D: l];
+    }
+
+    point2D currentPoint = allPoints.first;
+
+    for (p in allPoints) {
+        if (p != currentPoint) {
+            allSegments << line2D(
+                currentPoint, p);
+        }
+        currentPoint = p;
+    }
+
+    //now remove segments which are cut lines
+    line2D[] goodSegments();
+    for (segment in allSegments) {
+        if (segment !in cutLines) {
+            if (shaveTips) {
+                goodSegments << shaveTips(segment);
+            } else {
+                goodSegments << segment;
+            }
+        }
+    }
+
+    if (goodSegments.count == 0) goodSegments << l;
+
+    return goodSegments;
+}
+
+public line2D shaveTips(line2D line) {
+    point2D shaveAmount(0.0002, 0);
+    return line2D(
+        (line.p0) + shaveAmount,
+        (line.p1) - shaveAmount);
+}

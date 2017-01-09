@@ -94,3 +94,18 @@ public class AwePath2D extends APath2D {
     }
 }
 
+public APath2D profileFromCm3d(str profileName, str profileDir) {
+    if (profileName == "test") {
+        APath2D path();
+        
+        path.lineTo((1inch, 0));
+        path.lineTo((0, 3inch));
+        path.lineTo((-1inch, 0));
+
+        path.close();
+        
+        return path;
+    }
+
+    return cm3DLoader.getProfile(profileName, profileDir);
+}
