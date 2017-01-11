@@ -36,11 +36,11 @@
 
 package $dynamicPackageName;
 
-use cm.syntax, cm.runtime;
+use cm.syntax;
 
 public member @visibility AweGeoModel '<' @type=type '>' @id=id ';' {
     
-    var privateFieldName = SId("___" # id.name);
+   aweVar privateFieldName = SId("___" # id.name);
 
     return member { 
 

@@ -36,18 +36,50 @@
 
 package $dynamicPackageName;
 
-public member @visibility var @id=id @expr=['=' expr]? ';' { 
-    SType memberType(expr.type, expr.src);
+public const str CountRowsKeyword = "$count$";
 
-    return member { 
-        public @memberType @id = @expr;
-    };
-}
-
-public statement var @id=id @expr=['=' expr]? ';' : invisible debug { 
-    SType memberType(expr.type, expr.src);
+public class AweAggregatedTabularTable extends AweTabularTable {
     
-    return statement { 
-        @memberType @id = @expr;
-    };
+    private str->int hashCount();
+
+    public bool canRender(AweTabularRow row) {
+        
+        aweVar allowed = super(..);
+        if (!allowed) { return false; }
+
+        aweVar rowIndex = row.index;
+        
+        /// Well, it's the first row...
+        if (rowIndex == 0) { return true; }
+
+        aweVar rowHash = row.getHash();
+        for (i in (0..(rowIndex-1))) { 
+            if (this[i].getHash() == rowHash) { 
+                return false;
+            }
+        }
+
+        for (c in row.cells) { 
+            if (c.toS == CountRowsKeyword) { 
+                c.updateContentsWith(TabularTextData(this.hashCount.get(rowHash).toS));
+            }
+        }
+
+        return true; 
+    }
+
+    public void prepareToRender() { 
+        for (r in this.rows) { 
+            this.incrementHashCount(r.getHash);
+        }
+    }
+
+    final private void incrementHashCount(str h) { 
+        if (h !in this.hashCount) { 
+            this.hashCount.put(h, 1);
+        } else { 
+            aweVar i = this.hashCount.get(h);
+            this.hashCount.put(h, ++i);
+        }
+    }
 }

@@ -58,9 +58,17 @@ public class AweGeometry {
         return p;
     }
 
+     final public Primitive3D applyMaterial(Primitive3D p, str materialName) { 
+        return this.applyMaterial(p, material(materialName));
+    }
+
     final public Graph applyMaterial(Graph g, Material material) { 
         if (!material) { return g; }
         g.setFillColor(material.color2D); 
         return g;
+    }
+
+    final public Graph applyMaterial(Graph g, str materialName) { 
+        return this.applyMaterial(g, material(materialName));
     }
 }

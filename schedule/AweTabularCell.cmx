@@ -1,0 +1,214 @@
+/** Configura CET Source Copyright Notice (CETSC)
+
+   This file contains Configura CM source code and is part of the
+   Configura CET Development Platform (CETDEV). Configura CM
+   is a programming language created by Configura Sverige AB.
+   Configura, Configura CET and Configura CM are trademarks of
+   Configura Sverige AB. Configura Sverige AB owns Configura CET,
+   Configura CM, and CETDEV.
+
+   Copyright (C) 2004 Configura Sverige AB, All rights reserved.
+
+   You can modify this source file under the terms of the Configura CET
+   Source Licence Agreement (CETSL) as published by Configura Sverige AB.
+
+   Configura Sverige AB has exclusive rights to all changes, modifications,
+   and corrections of this source file. Configura Sverige AB has exclusive
+   rights to any new source file containing material from this source file.
+   A new source file based on this source file or containing material from
+   this source file has to include this Configura CET Source Copyright Notice
+   in its full content. All changes, modifications, and corrections mentioned
+   above shall be reported to Configura Sverige AB within One Month from
+   the date that the modification occurred.
+
+   Configura CM is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the CETSL for more details.
+
+   You should have received a copy of the CETSL along with the CETDEV.
+   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   Tel +46 13377800, Fax +46 13377855,
+   Email: info@configura.com, www.configura.com
+
+   END OF CETSC
+*/
+
+package $dynamicPackageName;
+
+public const double tabularCellDefaultWidth = 30inch;
+public alias tc = AweTabularCell;
+
+public class AweTabularCell {
+
+    private AweTabularCell _next;
+    private AweTabularCell _prev;
+    private AweTabularRow _row;
+    private double _width;
+    private AweTabularData _contents;
+    private double _extraWidth;
+    private alignment textAlign : public readable;
+
+    public int rowSpan;
+    public int colSpan;
+
+    public constructor(AweTabularData contents = null, double width = tabularCellDefaultWidth, AweTabularCell prev = null, alignment textAlign=alignment.middle) { 
+        this._contents = contents;
+        this._width = width;
+        this._prev = prev;
+        this.textAlign = textAlign;
+    }
+
+    public constructor(str data, int colSpan = 0, int rowSpan = 0, double width = tabularCellDefaultWidth, AweTabularCell prev = null, alignment textAlign=alignment.middle) { 
+        this(TabularTextData(data), width, prev);
+        this.colSpan = colSpan;
+
+        if (rowSpan > 2) { 
+            bug("The current implemented limit for rowSpan is two!");
+        }
+
+        this.rowSpan = rowSpan;
+        this.textAlign = textAlign;
+    }
+
+    extend public double rawWidth() {
+        aweVar span = max(1, this.colSpan);
+        return (this._width * span);
+    }
+
+    extend public double extraWidth(){
+        return this._extraWidth;
+    }
+
+    extend public double width() { 
+        return this.rawWidth + this._extraWidth;
+    }
+
+    extend public void addExtraWidth(double w) { 
+        this._extraWidth = w - this._width;
+    }
+
+    extend public AweTabularRow row=(AweTabularRow r) { 
+        return this._row = r;
+    }
+
+    extend public AweTabularCell next=(AweTabularCell c) { 
+        if (!this._next) { 
+            this._next = c;
+        }
+        return this;
+    }
+
+    extend public AweTabularCell prev=(AweTabularCell c) { 
+        if (!this._prev) { 
+            this._prev = c;
+        }
+        return this;
+    }
+
+    extend public void adjustSiblingHeight() {
+        
+        aweVar prevRow = this._row.prev; 
+        if (prevRow) {
+
+            aweVar myIndexRange = this.indexRange;
+            for (i in myIndexRange) { 
+                aweVar siblingCell = prevRow[i];
+                if (!siblingCell or siblingCell.emptyContent) { 
+                    return;
+                }
+
+                aweVar rootCell = this.findLastCellWithCustomWidth(this.width, myIndexRange);
+                aweVar myBaseWidth = (this._width  + siblingCell._extraWidth);
+                aweVar myNormalizedSize = myBaseWidth * max(1, siblingCell.colSpan);
+
+                /// Cells with colSpan should add all the result of the difference from it's own width
+                /// compared to it's siblings' to the value of the extra width it should have   
+                if (this.colSpan > 0) { 
+                    if (siblingCell.colSpan == 0 and (siblingCell.width > this._width)) { 
+                        this._extraWidth += siblingCell.width - this._width;
+                    }
+                }
+
+                /// Cells that are larger than its siblings
+                else if (siblingCell.width < myNormalizedSize) {
+
+                    /// are either actually smaller (if the actual non-spanel sibling has
+                    /// a custom width set)
+                    if (rootCell) { 
+                        this._width = rootCell.width;
+                    } else { 
+
+                        /// Or need to tell its sibling to grow
+                        siblingCell.addExtraWidth(myBaseWidth);
+                    }
+                }
+
+                /// Also, sometimes the new cell is the smallests one - so here we
+                // account for that scenario
+                else if (siblingCell.colSpan == 0 and (siblingCell.width > this.width)) {
+                    this.addExtraWidth(siblingCell._width + siblingCell._extraWidth);
+                } 
+                
+            }
+        }
+    }
+
+    extend public AweTabularCell findLastCellWithCustomWidth(double baseWidth, int[] indexRange) { 
+
+        /// Do I have a width that is different from the base widht and I'm not a spaned cell?
+        if ((this._width != baseWidth) and (this.colSpan == 0)) {
+            return this;
+        }
+
+        aweVar prevRow = this._row.prev; 
+        if (prevRow) { 
+            for (i in indexRange) { 
+                aweVar siblingCell = prevRow[i];
+                aweVar cell = siblingCell.findLastCellWithCustomWidth(baseWidth, indexRange);
+                if (cell) { 
+                    return cell;
+                }
+            } 
+        }
+
+        return null;
+    }
+
+    extend public bool emptyContent() { 
+        return this._contents in AweEmptyTabularData;
+    }
+
+    extend public bool spaned() { 
+        return this._contents in AweTabularSpanedData;
+    }
+
+    extend public str getContents() { 
+        if (this._contents) { 
+            return this._contents.getContents();
+        }
+        return null;
+    }
+
+    extend public void updateContentsWith(AweTabularData c) { 
+        this._contents = c;
+    }
+
+    extend public int index() { 
+        return this.indexRange().last();
+    }
+
+    extend public int[] indexRange() {
+        aweVar index = this._prev ? this._prev.index() + 1 : 0;
+        int[] result = [ index ];
+        for (i in (index..(index + (this.colSpan -1)))) { 
+            result << i;
+        }
+        return result;
+    }
+
+    public str toS() { 
+        return this.getContents();
+    }
+}
+

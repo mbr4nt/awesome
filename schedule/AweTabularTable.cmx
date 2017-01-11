@@ -1,0 +1,184 @@
+/** Configura CET Source Copyright Notice (CETSC)
+
+   This file contains Configura CM source code and is part of the
+   Configura CET Development Platform (CETDEV). Configura CM
+   is a programming language created by Configura Sverige AB.
+   Configura, Configura CET and Configura CM are trademarks of
+   Configura Sverige AB. Configura Sverige AB owns Configura CET,
+   Configura CM, and CETDEV.
+
+   Copyright (C) 2004 Configura Sverige AB, All rights reserved.
+
+   You can modify this source file under the terms of the Configura CET
+   Source Licence Agreement (CETSL) as published by Configura Sverige AB.
+
+   Configura Sverige AB has exclusive rights to all changes, modifications,
+   and corrections of this source file. Configura Sverige AB has exclusive
+   rights to any new source file containing material from this source file.
+   A new source file based on this source file or containing material from
+   this source file has to include this Configura CET Source Copyright Notice
+   in its full content. All changes, modifications, and corrections mentioned
+   above shall be reported to Configura Sverige AB within One Month from
+   the date that the modification occurred.
+
+   Configura CM is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the CETSL for more details.
+
+   You should have received a copy of the CETSL along with the CETDEV.
+   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   Tel +46 13377800, Fax +46 13377855,
+   Email: info@configura.com, www.configura.com
+
+   END OF CETSC
+*/
+
+package $dynamicPackageName;
+
+package const double DefaultRowHeight = 20inch;
+public class AweTabularTable { 
+    
+    private AweTabularRow[] rows() : public readable;
+    private str footerMessage : public readable;
+    private double height : public readable;
+    private double width : public readable;
+    private AweGraph currentGeometry;
+
+    public constructor() { }
+
+    extend public AweTabularTable operator<<(AweTabularRow row) {
+        
+        if (!row) { return this; }
+        
+        row.table = this;
+        
+        if ((row.index = this.rows.count) > 0) { 
+            aweVar lastRow = this.rows.last;
+            lastRow.next = row;
+            row.prev = lastRow;
+        }
+
+        this.rows << row;
+        
+        return this;
+    }
+    
+    extend public AweTabularTable newRow(double height=0) {
+        if (height == 0) height = DefaultRowHeight;
+
+        this << AweTabularRow(height);
+        return this;
+    }
+
+    extend public AweTabularTable operator<<(AweTabularRow[] rows) {
+        
+        if (!rows) { return this; }
+
+        for (row in rows) {
+            this << row;
+        }
+        
+        return this;
+    }
+
+    extend public AweTabularTable operator<<(AweTabularCell cell) {
+
+        if (!cell) { return this; }       
+
+        if (!this.rows.any) { 
+            this << AweTabularRow();
+        }
+
+        this.rows.last << cell;
+        
+        return this;
+    }
+
+    extend public AweTabularTable operator<<(str data) {
+        this << AweTabularCell(data);
+        return this;
+    }
+
+    extend public AweTabularRow operator[](int i) {
+        if (i > (this.rows.count -1)) { 
+            pln("Invalid row index"; #i);
+            return null;
+        }
+        return this.rows[i];
+    }
+
+    extend public void addFooterMessage(str message) { 
+        this.footerMessage = message;
+    }
+
+    extend public void ensureGeometry() {
+        if(!this.currentGeometry) { 
+            this.buildGeometry();
+        }
+    }
+
+    extend private void buildGeometry() { 
+        
+        if (!this.rows.any) { return; }
+        
+        aweVar cellCount = 0;
+        aweVar myRows = this.rows.copy();
+        for (row in myRows, index=rowIndex) {
+
+            /// What's the total cell count (max cell) for our table?
+            if (row.cellsCount > cellCount) {
+                cellCount = row.cellsCount;
+            }
+
+        }
+
+        /// Actually builds the geometry
+        myRows.reverse();
+        AweRectify r();
+        this.prepareToRender();
+        r.addFooterText(this.footerMessage);
+        for (row in myRows) if (this.canRender(row)) {
+            r.moveY(row.height);
+
+            for(cell in row.cells) {
+            
+                if (!cell or cell.emptyContent) { 
+                    continue;
+                }
+
+                aweVar cellWidth = cell.width;
+   
+                if (cell.spaned) {
+                    r.addBottomHalf(cellWidth);
+                } else if (cell.rowSpan > 0) { 
+                    r.addTopHalf(cellWidth, cell.toS(), textAlign=cell.textAlign);
+                } else {
+                    r.add(cellWidth, cell.toS(), textAlign=cell.textAlign);
+                }
+            }
+        }
+
+        this.currentGeometry = r.getAll();
+        this.height = r.totalHeight;
+        this.width = r.totalWidth;
+    }
+
+    extend public void prepareToRender() { }
+
+    extend public bool canRender(AweTabularRow row) { return (row != null); }
+
+    extend public void drawGraphs(LayerBuffer lb, View view) {
+        this.buildGeometry();
+        this.currentGeometry.draw(lb);
+    }
+
+    extend public AweGraph geometryInstance() {
+        this.buildGeometry();
+        return this.currentGeometry;
+    }
+
+    public str toS() { 
+        return "w:" # this.width # " - h:" # this.height;
+    }
+}

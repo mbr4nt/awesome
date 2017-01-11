@@ -49,19 +49,19 @@ public class AweProductCm3DLoader {
     }
 
     extend public Primitive3D get3D(str cadName, str folder=null) {
-        var cm3D = this.load(cadName, folder);
+       aweVar cm3D = this.load(cadName, folder);
 
         return this.get3D(cm3D);
     }
 
     extend public Graph get2D(str cadName, str folder=null) {
-        var cm3D = this.load(cadName, folder, true);
+       aweVar cm3D = this.load(cadName, folder, true);
 
         return this.get2D(cm3D);
     }
 
     extend public APath2D getProfile(str cadName, str folder=null) {
-        var cm3D = this.load(cadName, folder);
+       aweVar cm3D = this.load(cadName, folder);
 
         return this.getPath2D(cm3D);
     }
@@ -91,12 +91,12 @@ public class AweProductCm3DLoader {
     }
 
     extend private Cm3D load(str cadName, str folder=null, bool is2D=false) {
-        var fileName = this.getFileName(cadName, folder, is2D);
-        var url = cmFindUrl(fileName);
+       aweVar fileName = this.getFileName(cadName, folder, is2D);
+       aweVar url = cmFindUrl(fileName);
         
         if (!url.isFile()) return null;
 
-        var cm3D = this._cache.get(fileName);
+       aweVar cm3D = this._cache.get(fileName);
 
         if (!cm3D) {
             cm3D = url.getCm3D();
@@ -112,13 +112,13 @@ public class AweProductCm3DLoader {
     extend private Primitive3D get3D(Cm3D cm3D) {
         if (!cm3D) return null;
         
-        var url = cm3D.path.toS();
+       aweVar url = cm3D.path.toS();
 
         if (Primitive3D prim = this._3dCache.get(url)) {
             return prim.copy();
         }
 
-        var geometrySet = cm3D.get(detailLevel3D.high);
+       aweVar geometrySet = cm3D.get(detailLevel3D.high);
 
         if (!geometrySet) return null;
 
@@ -132,7 +132,7 @@ public class AweProductCm3DLoader {
             }
         }
 
-        var prim = safeSet3D(prims);
+       aweVar prim = safeSet3D(prims);
 
         this._3dCache.put(url, prim);
 
@@ -142,13 +142,13 @@ public class AweProductCm3DLoader {
     extend private APath2D getPath2D(Cm3D cm3D) {
         if (!cm3D) return null;
         
-        var url = cm3D.path.toS();
+       aweVar url = cm3D.path.toS();
 
         if (APath2D path = this._2dPathCache.get(url)) {
             return path.copy();
         }
         
-        var shapes = this.getShapes2D(cm3D);
+       aweVar shapes = this.getShapes2D(cm3D);
 
         if (!shapes) return null;
         
@@ -163,7 +163,7 @@ public class AweProductCm3DLoader {
             }
         }
 
-        var profilePath = profile.toPath();
+       aweVar profilePath = profile.toPath();
         
         this._2dPathCache.put(url, profilePath);
 
@@ -173,13 +173,13 @@ public class AweProductCm3DLoader {
     extend private Graph get2D(Cm3D cm3D) {
         if (!cm3D) return null;
         
-        var url = cm3D.path.toS();
+       aweVar url = cm3D.path.toS();
 
         if (Graph graph = this._2dGraphCache.get(url)) {
             return graph.copy();
         }
         
-        var shapes = this.getShapes2D(cm3D);
+       aweVar shapes = this.getShapes2D(cm3D);
 
         if (!shapes) return null;
 
@@ -195,7 +195,7 @@ public class AweProductCm3DLoader {
     }
 
     extend private AShape2D[] getShapes2D(Cm3D cm3D) {
-        var geometrySet = cm3D.getExact(6);
+       aweVar geometrySet = cm3D.getExact(6);
 
         if (!geometrySet) return null;
 

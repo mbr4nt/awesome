@@ -36,7 +36,6 @@
 
 package $dynamicPackageName;
 use cm.syntax;
-use cm.runtime;
 
 public definition @visibility AweBag @bundleName=id '<' @modelType=type '>'
     "base" '{' @baseMembers=[classMember]* '}' 
@@ -48,7 +47,7 @@ public definition @visibility AweBag @bundleName=id '<' @modelType=type '>'
     }
 
     /// Base class contains the exact declaration we received
-    var baseBundleName = bundleName.name # "__Base";
+   aweVar baseBundleName = bundleName.name # "__Base";
     definition { 
         @visibility class @baseBundleName extends AweDynamicPropBag : abstract {
             private @modelType model() : public readable;
@@ -59,7 +58,7 @@ public definition @visibility AweBag @bundleName=id '<' @modelType=type '>'
     /// __Del class have the missing delegates from the fields in the base class
     SType stype(baseBundleName);
     stype.eval();
-    var delClassName = baseBundleName # "_Del"; 
+   aweVar delClassName = baseBundleName # "_Del"; 
     definition { 
         @visibility AweBundleDelegates @delClassName @baseBundleName @stype @modelType;
     };

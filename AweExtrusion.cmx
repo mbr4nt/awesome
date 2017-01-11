@@ -81,7 +81,7 @@ public class AweExtrusion {
     }
     
     extend public Primitive3D simple(double length) {
-       var mesh = PolygonMesh3D(this.profile, length);
+       aweVar mesh = PolygonMesh3D(this.profile, length);
 
        mesh.setDoubleSided(true);
 

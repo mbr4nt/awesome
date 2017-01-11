@@ -36,55 +36,66 @@
 
 package $dynamicPackageName;
 
-public class AweTestSnapper extends Snapper {
-    public Graph graph;
-    public Primitive3D primitive3D;
-    public AweProduct product;
+public class AweModelPrint extends AweGeometry {
 
-    public constructor(Graph graph=null, Primitive3D primitive3D=null, AweProduct product=null) {
-        this.graph = graph;
-        this.primitive3D = primitive3D;
-        this.product = product;
-    }   
+    private AweTabularTable table();
 
-    public void drawGraphs(LayerBuffer lb, View view, GeometricFinder finder=null) {
-        if(product) graph = product.get2D();
+    private Object model;
+    
+    public constructor auto(model);
+    
+    public Graph graph() {
 
-        if (graph) graph.draw(lb);
+        if (!this.model) { return null; }
+        
+        this.table = new AweTabularTable();
+        this.table << this.getHeader().rows;
+        this.addRows();
+
+        return table.geometryInstance();
     }
 
-    public Primitive3D get3D(FetchEnv3D env) {
-        if(product) return product.get3D(env);
-        if(primitive3D) return primitive3D;
-        return super(..);
+    extend public AweTabularTableHeader getHeader() { 
+        AweTabularTableHeader result();
+        result << tc("Model: " # this.model.class.name, colSpan=3);
+        result.newRow()
+            << tc("Type", width=2)
+            << tc("Name", width=2)
+            << tc("Value", width=6);
+        return result;
     }
 
-    public box localBound() { 
-        return product.?localBound;
+    extend public void addRows() {
+        aweVar modelClass = this.model.class;
+        aweVar modelFields = modelClass.fields;
+        for (f in modelFields) { 
+            this.table.newRow(0.7)
+                << f.type.toS
+                << f.name.toS
+                << this.getValueFrom(this.model, f);
+        }
     }
 
-}
 
-/***********************************************************************
- * test functions
- ***********************************************************************/
+    extend private str getValueFrom(Object o, Field f) {
+        aweVar value = o.?get(f);
+        if (value) { 
+            if (f.type.isClass and (f.type.pkg.toS.indexOf("cm.") == -1)) { 
+                return getValueFrom(value);
+            } else { 
+                return value.toS();
+            }
+        }
+        return "null";
+    }
 
-public void test(Snapper z) {
-    z.launch();
-}
-
-public void test(Graph g) {
-    AweTestSnapper(graph=g).launch();
-}
-
-public void test(Primitive3D p) {
-    AweTestSnapper(primitive3D=p).launch();
-}
-
-public void test(AweProduct p) {
-    AweTestSnapper(product=p).launch();
-}
-
-public void test(AweGeometry p) {
-    AweTestSnapper(primitive3D=p.medium3D(), graph=p.graph()).launch();
+    extend private str getValueFrom(Object o) { 
+        aweVar objClass = o.class;
+        aweVar modelFields = objClass.fields;
+        str result = "";
+        for (f in modelFields) { 
+            result #= " [" # f.name.toS # "=" # this.getValueFrom(o, f) #  "] ";
+        }
+        return result;
+    }
 }

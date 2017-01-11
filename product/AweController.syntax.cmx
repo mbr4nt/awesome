@@ -81,7 +81,7 @@ public definition @visibility AweController @controllerName=id
 
     };
 
-    var baseClassName = controllerName.name # "___Base";
+   aweVar baseClassName = controllerName.name # "___Base";
     if (ext) { 
         definition { 
             @visibility class @baseClassName extends @ext { 

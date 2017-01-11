@@ -27,7 +27,7 @@
    See the CETSL for more details.
 
    You should have received a copy of the CETSL along with the CETDEV.
-   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   If not, write to Configura Sveriúge AB, Box 306, SE-581 02 Linköping, Sweden.
    Tel +46 13377800, Fax +46 13377855,
    Email: info@configura.com, www.configura.com
 
@@ -36,55 +36,14 @@
 
 package $dynamicPackageName;
 
-public class AweTestSnapper extends Snapper {
-    public Graph graph;
-    public Primitive3D primitive3D;
-    public AweProduct product;
+public class AweBaseScheduleHeaderRow {
+    public AweBaseScheduleHeaderColumn[] columns();
 
-    public constructor(Graph graph=null, Primitive3D primitive3D=null, AweProduct product=null) {
-        this.graph = graph;
-        this.primitive3D = primitive3D;
-        this.product = product;
-    }   
+    public constructor() { }
 
-    public void drawGraphs(LayerBuffer lb, View view, GeometricFinder finder=null) {
-        if(product) graph = product.get2D();
+    extend public AweBaseScheduleHeaderRow operator<<(str data) {
+        this.columns << new AweBaseScheduleHeaderColumn(data);
 
-        if (graph) graph.draw(lb);
+        return this;
     }
-
-    public Primitive3D get3D(FetchEnv3D env) {
-        if(product) return product.get3D(env);
-        if(primitive3D) return primitive3D;
-        return super(..);
-    }
-
-    public box localBound() { 
-        return product.?localBound;
-    }
-
-}
-
-/***********************************************************************
- * test functions
- ***********************************************************************/
-
-public void test(Snapper z) {
-    z.launch();
-}
-
-public void test(Graph g) {
-    AweTestSnapper(graph=g).launch();
-}
-
-public void test(Primitive3D p) {
-    AweTestSnapper(primitive3D=p).launch();
-}
-
-public void test(AweProduct p) {
-    AweTestSnapper(product=p).launch();
-}
-
-public void test(AweGeometry p) {
-    AweTestSnapper(primitive3D=p.medium3D(), graph=p.graph()).launch();
 }

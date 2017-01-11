@@ -1,0 +1,254 @@
+/** Configura CET Source Copyright Notice (CETSC)
+
+   This file contains Configura CM source code and is part of the
+   Configura CET Development Platform (CETDEV). Configura CM
+   is a programming language created by Configura Sverige AB.
+   Configura, Configura CET and Configura CM are trademarks of
+   Configura Sverige AB. Configura Sverige AB owns Configura CET,
+   Configura CM, and CETDEV.
+
+   Copyright (C) 2004 Configura Sverige AB, All rights reserved.
+
+   You can modify this source file under the terms of the Configura CET
+   Source Licence Agreement (CETSL) as published by Configura Sverige AB.
+
+   Configura Sverige AB has exclusive rights to all changes, modifications,
+   and corrections of this source file. Configura Sverige AB has exclusive
+   rights to any new source file containing material from this source file.
+   A new source file based on this source file or containing material from
+   this source file has to include this Configura CET Source Copyright Notice
+   in its full content. All changes, modifications, and corrections mentioned
+   above shall be reported to Configura Sverige AB within One Month from
+   the date that the modification occurred.
+
+   Configura CM is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the CETSL for more details.
+
+   You should have received a copy of the CETSL along with the CETDEV.
+   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   Tel +46 13377800, Fax +46 13377855,
+   Email: info@configura.com, www.configura.com
+
+   END OF CETSC
+*/
+
+package $dynamicPackageName;
+
+private const str UnkownTypeValueDescription = "Unknown";
+
+public class AweBaseSchedule extends Snapper : abstract {
+    private AweTabularTable table() : public readable;
+    private AweTabularTableHeader header : public readable;
+    
+    private int currentCellIndex = 0;
+    private int totalColumns = 0;
+    private int headerRowCount = 1;
+    private str showHideLabel;
+
+    public AweBaseScheduleHeaderRow[] headerRows();
+    public AweBaseScheduleHeaderColumn[] headerColumns();
+    public int->bool columnVisibility();
+    public int->AweBaseScheduleHeaderColumn columnById();
+
+    public constructor() { 
+        this.buildHeaderColumns();
+        this.expandColumns();
+    }
+
+    extend public void buildHeaderColumns() { }
+
+    extend public int totalVisibleColumns() {
+        int count = 0;
+
+        for (key, value in columnVisibility) {
+            if (value) count++;
+        }
+
+        return count;
+    }
+
+    extend public void expandColumns() {
+        this.headerRows.clear();
+        this.columnVisibility.clear();
+        this.columnById.clear();
+        this.totalColumns = 0;
+        this.expandSubColumns(this.headerColumns);
+
+        for (column in this.headerColumns) {
+            if (column.subColumns.?count == 0) {
+                column.rowSpan = this.headerRows.count;
+            }
+        }
+    }
+
+    extend private void expandSubColumns(AweBaseScheduleHeaderColumn[] subColumns) {
+        for (subColumn in subColumns) {
+            subColumn.colSpan = 0;
+            aweVar parentColumn = subColumn.parent;
+
+            str showHideLabel = "";
+            if (subColumn.allowHide) {
+                if (parentColumn and parentColumn.showHideLabel != "") {
+                    showHideLabel = showHideLabel # parentColumn.showHideLabel # ":" # subColumn.label;
+                }
+                else {
+                    showHideLabel = subColumn.label;
+                }
+            }
+
+            subColumn.showHideLabel = showHideLabel;
+            subColumn.level = parentColumn ? parentColumn.level + 1 : 1;
+
+            if (subColumn.subColumns.?count > 0) {
+                this.expandSubColumns(subColumn.subColumns);
+            }
+            else {
+                subColumn.index = totalColumns;
+                this.columnVisibility.put(subColumn.index, subColumn.visible);
+                this.columnById.put(subColumn.index, subColumn);
+
+                this.totalColumns++;
+
+                if (parentColumn) {
+                    for (sibling in parentColumn.siblings) {
+                        if (sibling.subColumns.?count == 0) {
+                            sibling.rowSpan = subColumn.level - parentColumn.level + 1;
+                        }
+                    }
+                }
+
+                if (subColumn.visible) {
+                    while (parentColumn) {
+                        parentColumn.colSpan++;
+                        parentColumn = parentColumn.parent;
+                    }
+                }
+            }
+
+            while (subColumn.level > this.headerRows.count) {
+                AweBaseScheduleHeaderRow row();
+                this.headerRows << row;
+            }
+
+            this.headerRows[subColumn.level-1].columns << subColumn;
+        }
+    }
+
+    extend public AweTabularTableHeader getHeader() { 
+        AweTabularTableHeader header();
+
+        for (row in this.headerRows) {
+            header.newRow();
+
+            for (column in row.columns) {
+                if (column.showInSchedule) {
+                    header << tc(column.label, colSpan=column.colSpan, rowSpan=column.rowSpan, width=column.width);
+                }
+            }
+        }
+
+        return header;
+    }
+
+    extend public void addItems() : abstract { }
+    extend public str getFooterMessage() { return null; }
+
+    extend public AweBaseSchedule operator<<(AweTabularRow row) {
+        this.table << row;
+        return this;
+    }
+
+    extend public AweBaseSchedule operator<<(AweTabularRow[] rows) {
+        this.table << rows;
+        return this;
+    }
+
+    extend public AweBaseSchedule operator<<(AweTabularCell cell) {
+        if (!this.rows.any) { 
+            this << AweTabularRow();
+        }
+        this.rows.last << cell;
+    
+        return this;
+    }
+
+    extend public void addItemCell(Object data) {
+        aweVar value = data ? data.toS : "";
+        this.addItemCell(value);
+    }
+
+    extend public void addItemCell(str data) {
+        if (this.columnVisibility.get(this.currentCellIndex)) {
+            this << data;
+        }
+
+        this.currentCellIndex++;
+    }
+
+    extend public AweBaseSchedule operator<<(str data) {
+        return (this << AweTabularCell(data));
+    }
+    
+    extend public AweBaseSchedule operator<<(Object data) {
+        aweVar value = data ? data.toS : "";
+        return (this << AweTabularCell(value));
+    }
+
+    extend public AweBaseSchedule newRow() { 
+        this.currentCellIndex = 0;
+        this << AweTabularRow();
+        return this;
+    }
+
+    extend public AweTabularRow[] rows() {
+        return this.table.rows;
+    }
+
+    public box localBound() {
+        this.table.ensureGeometry();
+        return box((0, 0, 0), (this.table.width, this.table.height, 0));
+    }
+
+    public void drawGraphs(LayerBuffer lb, View view, GeometricFinder finder=null) {
+        this.table = new AweTabularTable();
+        this.table << (this.header = this.getHeader()).rows;
+        this.addItems();
+        aweVar footerMessage = this.getFooterMessage();
+        if (footerMessage) { 
+            this.table.addFooterMessage(footerMessage);
+        }
+        this.table.drawGraphs(lb, view);
+    }
+
+    public bool buildQuickProperties(QuickProperties props) { 
+        if (this.headerRows.?count > 0) {
+            props.append(ButtonQuickProperty("showColumns", "Show/Hide Columns", "Edit", null));
+        }
+        else {
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool quickPropertyChanged(QuickProperties props, str key, Object value, bool testChangeOnly) {
+        if (testChangeOnly) return super(..);
+
+        if (key == "showColumns") {
+            if (Window w = anyFrameWindow()) {
+                if (!scheduleShowColumnDialog or !scheduleShowColumnDialog.valid) {
+                    scheduleShowColumnDialog = new AweScheduleShowColumnsDialog(w, this);
+                }
+
+                bool wasHidden = !scheduleShowColumnDialog.visible;
+                scheduleShowColumnDialog.show();
+
+                if (wasHidden) scheduleShowColumnDialog.setFocus();
+            }
+        }
+
+        return true;
+    }
+}

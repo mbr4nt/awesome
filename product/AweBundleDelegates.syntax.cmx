@@ -36,7 +36,6 @@
 
 package $dynamicPackageName;
 use cm.syntax;
-use cm.runtime;
 
 public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundleDelegates=id 
     @classRef=type @modelType=type { 
@@ -48,32 +47,32 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
     SStatements listLogic();
     SStatements initLogic();
 
-    var modelClass = modelType.type.Class;
-    var modelCallsFields = modelClass.fields;
-    var c = classRef.type.Class;
+    aweVar modelClass = modelType.type.Class;
+    aweVar modelCallsFields = modelClass.fields;
+    aweVar c = classRef.type.Class;
     for(field in c.fields) {
-        var realFieldName = field.name;
+        aweVar realFieldName = field.name;
         if (!realFieldName.ibeginsWith("_") or (field.export != exportType.private)) { 
             continue;
         }
-        var fieldName = realFieldName.substringAfter("_");
-        var fieldNameU = fieldName.firsToUpper();
-        var rawSecondaryValue = "secondary_" # fieldNameU # "_value";
-        var fieldValue = fieldName # "_value";
-        var fieldChangedMethod = fieldName # "_changed";
-        var fieldTitleMethod = fieldName # "_title";
-        var fieldDomainMethod = fieldName # "_domain";
-        var fieldDomainValueMethod = fieldName # "_domainValue";
-        var getDomainValueMethod = "get" # fieldNameU # "_domainValue";
-        var getDomainFieldMethod = "get" # fieldNameU # "_domainField";
-        var setDomainFieldMethod = "set" # fieldNameU # "_domainField";
-        var privateFinalFieldDomainMethod = fieldName # "_realDomain";
-        var hasDomain = !field.domain.equal(null);
+        aweVar fieldName = realFieldName.substringAfter("_");
+        aweVar fieldNameU = fieldName.firsToUpper();
+        aweVar rawSecondaryValue = "secondary_" # fieldNameU # "_value";
+        aweVar fieldValue = fieldName # "_value";
+        aweVar fieldChangedMethod = fieldName # "_changed";
+        aweVar fieldTitleMethod = fieldName # "_title";
+        aweVar fieldDomainMethod = fieldName # "_domain";
+        aweVar fieldDomainValueMethod = fieldName # "_domainValue";
+        aweVar getDomainValueMethod = "get" # fieldNameU # "_domainValue";
+        aweVar getDomainFieldMethod = "get" # fieldNameU # "_domainField";
+        aweVar setDomainFieldMethod = "set" # fieldNameU # "_domainField";
+        aweVar privateFinalFieldDomainMethod = fieldName # "_realDomain";
+        aweVar hasDomain = !field.domain.equal(null);
         
         SType domainType;
         Type fieldType;
         if (hasDomain) { 
-            var rawDomainClass = field.domain;
+           aweVar rawDomainClass = field.domain;
             if (rawDomainClass as Type) { 
                 domainType = SType(rawDomainClass);
             } else { 
@@ -100,12 +99,15 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
             SMember secondaryValue;
             if (fieldType != Object) {
                 getFieldChanged = block { 
-                    return this.@fieldChangedMethod(oldValue, newValue, getRealValueFrom(newValue).@fieldType);
+                    return this.@fieldChangedMethod(oldValue, newValue, getRealValueFrom(newValue).?@fieldType);
                 };
                 setDomainLogic = block { 
                     return this.@rawSecondaryValue = value;
                 };
                 getDomainLogic = block { 
+                    if (!this.@rawSecondaryValue) { 
+                        this.@rawSecondaryValue = @domainType.Class.instantiate().@domainType;
+                    }
                     return this.@rawSecondaryValue;
                 };
                 getFieldValue = block { 
@@ -119,7 +121,7 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
                 };
                 fieldSetter = block {
                     this.@fieldDomainValueMethod = value;
-                    this.@fieldName = getRealValueFrom(value).@fieldType;
+                    this.@fieldName = getRealValueFrom(value).?@fieldType;
                 };
             } else {
                 getFieldChanged = block { 
@@ -176,12 +178,11 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
                 }
 
                 extend public @fieldType @fieldName=(@fieldType newValue) {
-
-                    if (newValue.equal(this.@fieldName)) { 
+                    if (newValue == this.@fieldName) { 
                         return this.@fieldName;
                     }
 
-                    return this.@fieldValue = @fieldChangedMethod(this.@fieldName, newValue);
+                    return this.@fieldValue = this.@fieldChangedMethod(this.@fieldName, newValue);
                 }
                 
                 final private @fieldType @fieldName() { 
@@ -199,14 +200,14 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
                 extend private @domainType @privateFinalFieldDomainMethod() { 
                     /// If the domain changes, we trigger the set event so we can be prepared
                     /// for that new values before showing that to the user
-                    var domain = this.@fieldDomainMethod();
-                    var currentDomainInfo = this.@getDomainFieldMethod();
+                    aweVar domain = this.@fieldDomainMethod();
+                    aweVar currentDomainInfo = this.@getDomainFieldMethod();
                     if ((!currentDomainInfo and domain) 
                         or (domain and !domain.equal(currentDomainInfo))
                         or (!domain and currentDomainInfo)) { 
                         this.@setDomainFieldMethod = domain; 
                         
-                        var newValue = this.@getDomainValueMethod.equal(null) ? 
+                        aweVar newValue = this.@getDomainValueMethod.equal(null) ? 
                             domain.?first() : 
                             domain.?closest(getRealValueFrom(this.@getDomainValueMethod));
                         this.set(@fieldName, newValue);
@@ -324,6 +325,7 @@ public Object getRealValueFrom(Object o) {
 }
 
 public Object getFirstDomainFrom(Object source, str realFieldName) {
+    if (!source) { return null; }
     for (f in source.class.fields) if (f.name == realFieldName) { 
         return f.domain;
     }

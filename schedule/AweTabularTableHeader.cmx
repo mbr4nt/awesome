@@ -36,55 +36,32 @@
 
 package $dynamicPackageName;
 
-public class AweTestSnapper extends Snapper {
-    public Graph graph;
-    public Primitive3D primitive3D;
-    public AweProduct product;
+public class AweTabularTableHeader {
 
-    public constructor(Graph graph=null, Primitive3D primitive3D=null, AweProduct product=null) {
-        this.graph = graph;
-        this.primitive3D = primitive3D;
-        this.product = product;
-    }   
+    private AweTabularTable table() : public readable;
+    public constructor() { }
 
-    public void drawGraphs(LayerBuffer lb, View view, GeometricFinder finder=null) {
-        if(product) graph = product.get2D();
-
-        if (graph) graph.draw(lb);
+    extend public AweTabularTableHeader operator<<(AweTabularRow row) {
+        this.table << row;
+        return this;
     }
 
-    public Primitive3D get3D(FetchEnv3D env) {
-        if(product) return product.get3D(env);
-        if(primitive3D) return primitive3D;
-        return super(..);
+    extend public AweTabularTableHeader operator<<(AweTabularCell cell) {
+        this.table << cell;
+        return this;
     }
 
-    public box localBound() { 
-        return product.?localBound;
+    extend public AweTabularTableHeader operator<<(str data) {
+        this.table << data;
+        return this;
     }
 
-}
+    extend public AweTabularTableHeader newRow() { 
+        this.table.newRow();
+        return this;
+    }
 
-/***********************************************************************
- * test functions
- ***********************************************************************/
-
-public void test(Snapper z) {
-    z.launch();
-}
-
-public void test(Graph g) {
-    AweTestSnapper(graph=g).launch();
-}
-
-public void test(Primitive3D p) {
-    AweTestSnapper(primitive3D=p).launch();
-}
-
-public void test(AweProduct p) {
-    AweTestSnapper(product=p).launch();
-}
-
-public void test(AweGeometry p) {
-    AweTestSnapper(primitive3D=p.medium3D(), graph=p.graph()).launch();
+    extend public AweTabularRow[] rows() { 
+        return this.table.rows;
+    }
 }

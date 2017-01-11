@@ -1,0 +1,149 @@
+/** Configura CET Source Copyright Notice (CETSC)
+
+   This file contains Configura CM source code and is part of the
+   Configura CET Development Platform (CETDEV). Configura CM
+   is a programming language created by Configura Sverige AB.
+   Configura, Configura CET and Configura CM are trademarks of
+   Configura Sverige AB. Configura Sverige AB owns Configura CET,
+   Configura CM, and CETDEV.
+
+   Copyright (C) 2004 Configura Sverige AB, All rights reserved.
+
+   You can modify this source file under the terms of the Configura CET
+   Source Licence Agreement (CETSL) as published by Configura Sverige AB.
+
+   Configura Sverige AB has exclusive rights to all changes, modifications,
+   and corrections of this source file. Configura Sverige AB has exclusive
+   rights to any new source file containing material from this source file.
+   A new source file based on this source file or containing material from
+   this source file has to include this Configura CET Source Copyright Notice
+   in its full content. All changes, modifications, and corrections mentioned
+   above shall be reported to Configura Sverige AB within One Month from
+   the date that the modification occurred.
+
+   Configura CM is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the CETSL for more details.
+
+   You should have received a copy of the CETSL along with the CETDEV.
+   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   Tel +46 13377800, Fax +46 13377855,
+   Email: info@configura.com, www.configura.com
+
+   END OF CETSC
+*/
+
+package $dynamicPackageName;
+
+package AweScheduleShowColumnsDialog scheduleShowColumnDialog;
+
+private AweBaseSchedule schedule = null;
+private AweBaseScheduleColumnCheckBox[] checkBoxes();
+private bool loaded = false;
+
+public class AweScheduleShowColumnsDialog extends DialogWindow {
+
+    public constructor(Window parent, AweBaseSchedule baseSchedule) {
+        schedule = baseSchedule;
+
+        super(parent, label="Select Schedule Columns", size=(120, 20), initVisible=false);
+
+        scheduleShowColumnDialog = this;
+        build();
+        autoPosition(center=true);
+    }
+
+    final private void build() {
+        loaded = false;
+        checkBoxes.clear();
+
+        GroupBox sub0(this, label="Columns", font=boldSystemFont, size=(240, 20));
+
+        AweBaseScheduleColumnCheckBox previousCol = null;
+
+        int currentRow = 1;
+        int rowCount = schedule.headerRows.?count;
+        int n = 0;
+        int initialY = 4;
+        int currentX = 8;
+        int currentY = initialY;
+        int rowHeight = 18;
+        int maxColSize = 0;
+
+        AweBaseScheduleHeaderColumn[] checkboxColumns();
+
+        for (id, column in schedule.columnById) {
+            if (column.allowHide) {
+                checkboxColumns << column;
+            }
+        }
+
+        for (column in checkboxColumns) {
+            AweBaseScheduleColumnCheckBox col(sub0, label=column.showHideLabel, callback=function showHideCB);
+            col.headerColumn = column;
+            col.newVisible = column.visible;
+            if (column.visible) {
+                col.setState(1);
+            }
+
+            checkBoxes << col;
+
+            if (n == 10) {
+                n = 0;
+                currentX += maxColSize + 8;
+                currentY = initialY;
+                maxColSize = 0;
+            }
+            
+            col.at(currentX, currentY);
+            currentY += rowHeight;
+
+            maxColSize = max(maxColSize, col.size.w);
+
+            previousCol = col;
+            n++;
+        }
+
+        sub0.autoSize();
+
+        Button saveButton(this, label="Save", textSide=down, image=icon("save"), callback=function saveCB);
+        saveButton.below(sub0);
+
+        Button closeButton(this, label="Close", textSide=down, image=icon("close"), callback=function closeCB);
+        closeButton.rightOf(saveButton);
+
+        this.autoSize();
+
+        loaded = true;
+    }
+}
+
+private void showHideCB(Control c) {
+    if (!loaded) return;
+
+    c.AweBaseScheduleColumnCheckBox.newVisible = c.CheckBox.painter.state == 1;
+}
+
+private void saveCB(Control c) {
+    if (!loaded) return;
+
+    for (checkBox in checkBoxes) {
+        checkBox.headerColumn.visible = checkBox.newVisible;
+    }
+    
+    schedule.invalidate();
+    schedule.expandColumns();
+    schedule.space.refreshSelection();
+    if (schedule == schedule.space.selectedSnapper) {
+        schedule.showQuickProperties(true);
+    }
+    
+    closeCB(c);
+}
+
+private void closeCB(Control c) {
+    if (!loaded) return;
+
+    if (scheduleShowColumnDialog.valid) scheduleShowColumnDialog.close();
+}

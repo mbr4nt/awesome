@@ -36,11 +36,15 @@
 package $dynamicPackageName;
 
 use $parentPackageName;
+use $parentPackageName.schedule;
+use $parentPackageName.schedule.tabularData;
 use $parentPackageName.util;
+
 use cm.core;
 use cm.geometry;
 use cm.geometry2D.advanced;
 use cm.core3D;
+use cm.runtime;
 
 public str firsToUpper(str s) { 
     if (!s or !s.any) { return s; }
