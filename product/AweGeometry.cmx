@@ -51,24 +51,58 @@ public class AweGeometry {
     extend public Graph graph() {
         return null;
     }
-    
+
     final public Primitive3D applyMaterial(Primitive3D p, Material material) { 
-        if (!material) { return p; }
-        material.apply(p, FetchEnv3D());
-        return p;
+        return p.?applyMaterial(material);
     }
 
-     final public Primitive3D applyMaterial(Primitive3D p, str materialName) { 
-        return this.applyMaterial(p, material(materialName));
+    final public Primitive3D applyMaterial(Primitive3D p, str materialId) { 
+        return p.?applyMaterial(materialId);
     }
 
     final public Graph applyMaterial(Graph g, Material material) { 
-        if (!material) { return g; }
-        g.setFillColor(material.color2D); 
-        return g;
+        return g.?applyMaterial(material);
     }
 
-    final public Graph applyMaterial(Graph g, str materialName) { 
-        return this.applyMaterial(g, material(materialName));
+    final public Graph applyMaterial(Graph g, str materialId) { 
+        return g.?applyMaterial(materialId);
     }
+}
+
+public Primitive3D applyMaterial(Primitive3D p, str materialId) {
+    if (Material material = getMaterial(materialId)) {
+        material.apply(p, new FetchEnv3D());
+    }
+    
+    return p;
+}
+
+public Primitive3D applyMaterial(Primitive3D p, Material material) {
+    if (material) {
+        material.apply(p, new FetchEnv3D());
+    }
+    
+    return p;
+}
+
+public Graph applyMaterial(Graph g, str materialId) {
+    if (Material material = getMaterial(materialId)) {
+        g.setFillColor(material.color2D);
+    }
+
+    return g;
+}
+
+public Graph applyMaterial(Graph g, Material material) {
+    if (material) {
+        g.setFillColor(material.color2D);
+    }
+
+    return g;
+}
+
+private Material getMaterial(str id) {
+    if (!id or id.empty()) return null;
+    
+    return material(id);
 }

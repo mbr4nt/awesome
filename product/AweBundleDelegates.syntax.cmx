@@ -57,17 +57,18 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
         }
         aweVar fieldName = realFieldName.substringAfter("_");
         aweVar fieldNameU = fieldName.firsToUpper();
-        aweVar rawSecondaryValue = "secondary_" # fieldNameU # "_value";
+        aweVar rawSecondaryValue = "secondary_" # fieldName # "_value";
         aweVar fieldValue = fieldName # "_value";
         aweVar fieldChangedMethod = fieldName # "_changed";
         aweVar fieldTitleMethod = fieldName # "_title";
         aweVar fieldDomainMethod = fieldName # "_domain";
         aweVar fieldDomainValueMethod = fieldName # "_domainValue";
-        aweVar getDomainValueMethod = "get" # fieldNameU # "_domainValue";
-        aweVar getDomainFieldMethod = "get" # fieldNameU # "_domainField";
-        aweVar setDomainFieldMethod = "set" # fieldNameU # "_domainField";
-        aweVar privateFinalFieldDomainMethod = fieldName # "_realDomain";
+        aweVar getDomainValueMethod = "get_" # fieldName # "_domainValue";
+        aweVar getDomainFieldMethod = "get_" # fieldName # "_domainField";
+        aweVar setDomainFieldMethod = "set_" # fieldName # "_domainField";
+        aweVar updateFieldDomainMethod = fieldName # "_realDomain";
         aweVar hasDomain = !field.domain.equal(null);
+        aweVar domainInitializedFieldName = fieldName # "_domainInitialized";
         
         SType domainType;
         Type fieldType;
@@ -105,8 +106,9 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
                     return this.@rawSecondaryValue = value;
                 };
                 getDomainLogic = block { 
-                    if (!this.@rawSecondaryValue) { 
+                    if (!this.@domainInitializedFieldName and !this.@rawSecondaryValue) { 
                         this.@rawSecondaryValue = @domainType.Class.instantiate().@domainType;
+                        this.@domainInitializedFieldName = true;
                     }
                     return this.@rawSecondaryValue;
                 };
@@ -150,17 +152,18 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
 
             bundledMembers << member { 
 
+                private bool @domainInitializedFieldName = false;
                 @secondaryValue;
                 
-                final private @domainType @setDomainFieldMethod=(@domainType value) { 
+                extend public @domainType @setDomainFieldMethod=(@domainType value) { 
                     @setDomainLogic;
                 }
 
-                final private @domainType @getDomainFieldMethod() { 
+                extend public @domainType @getDomainFieldMethod() { 
                     @getDomainLogic;
                 }
 
-                final private @fieldType @fieldValue=(@fieldType value) { 
+                extend public @fieldType @fieldValue=(@fieldType value) { 
                     @setFieldValue;
                 }
 
@@ -197,7 +200,7 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
                     @getDomainLogic;
                 }
 
-                extend private @domainType @privateFinalFieldDomainMethod() { 
+                extend public @domainType @updateFieldDomainMethod() { 
                     /// If the domain changes, we trigger the set event so we can be prepared
                     /// for that new values before showing that to the user
                     aweVar domain = this.@fieldDomainMethod();
@@ -218,7 +221,7 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
             };
 
             initPropsLogic << block { 
-                this.set(@fieldName, this.@privateFinalFieldDomainMethod().?first());
+                this.set(@fieldName, this.@updateFieldDomainMethod().?first());
             };
 
             /// Can we update this value down to the model class?!
@@ -255,7 +258,7 @@ public definition @visibility AweBundleDelegates @bundleDelegatesName=id @bundle
 
             listLogic << block {
                 result << PropState(@fieldName, this.@getDomainValueMethod(), 
-                            this.@fieldTitleMethod(), this.@privateFinalFieldDomainMethod());
+                            this.@fieldTitleMethod(), this.@updateFieldDomainMethod());
             };
         }
     }
