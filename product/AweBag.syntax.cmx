@@ -37,9 +37,10 @@
 package $dynamicPackageName;
 use cm.syntax;
 
-public definition @visibility AweBag @bundleName=id '<' @modelType=type '>'
+public definition @visibility AweBag @bundleName=id '<' @modelType=type '>' '{'
     "base" '{' @baseMembers=[classMember]* '}' 
     "body" '{' @extraMembers=[classMember]* '}' 
+'}'
 {
     SMembers bundledMembers(noSrcRef);
     for(m in baseMembers) {
