@@ -41,6 +41,7 @@ public class AweDynamicPropBag : abstract {
     private Snapper controller : public readable;
     public constructor auto();
     public constructor() { }
+    extend public Object getModel() : abstract { }
     extend public PropState[] list()  : abstract { }
     extend public Object get(str key) : abstract { }
     extend public void set(str key, Object value) : abstract { }

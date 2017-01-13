@@ -80,9 +80,8 @@ public class AweProduct extends Snapper {
         }
     }
 
-    //abstract?
     extend public void build() {
-
+        this << new AweModelPrint(this._model);
     }
 
     extend public void buildSuper3D() {
