@@ -1,0 +1,120 @@
+/** Configura CET Source Copyright Notice (CETSC)
+
+   This file contains Configura CM source code and is part of the
+   Configura CET Development Platform (CETDEV). Configura CM
+   is a programming language created by Configura Sverige AB.
+   Configura, Configura CET and Configura CM are trademarks of
+   Configura Sverige AB. Configura Sverige AB owns Configura CET,
+   Configura CM, and CETDEV.
+
+   Copyright (C) 2004 Configura Sverige AB, All rights reserved.
+
+   You can modify this source file under the terms of the Configura CET
+   Source Licence Agreement (CETSL) as published by Configura Sverige AB.
+
+   Configura Sverige AB has exclusive rights to all changes, modifications,
+   and corrections of this source file. Configura Sverige AB has exclusive
+   rights to any new source file containing material from this source file.
+   A new source file based on this source file or containing material from
+   this source file has to include this Configura CET Source Copyright Notice
+   in its full content. All changes, modifications, and corrections mentioned
+   above shall be reported to Configura Sverige AB within One Month from
+   the date that the modification occurred.
+
+   Configura CM is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the CETSL for more details.
+
+   You should have received a copy of the CETSL along with the CETDEV.
+   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   Tel +46 13377800, Fax +46 13377855,
+   Email: info@configura.com, www.configura.com
+
+   END OF CETSC
+*/
+
+package custom.awesome;
+
+public class MateusChallenge extends Challenge {
+    public ChallengeResult process(double[] a, double[] b) {
+        var result = ChallengeResult();
+
+        double[] lastState = a;
+        while(!lastState.equal(b)) {
+            var step = processStep(lastState,b);
+            result.steps << step;
+            lastState = step.snapshotAfter;
+        }
+
+        for(s in result.steps) {
+            result.totalCost += s.cost;
+        }
+        return result;
+    }
+
+    extend private ChallengeOperation processStep(double[] a, double[] b) {
+        double[] newState = a.copy();
+
+        double[] notMatchA();
+        for(n in a) {
+            if(n !in b) {
+                notMatchA << n;
+            }
+        }
+
+        double[] notMatchB();
+        for(n in b) {
+            if(n !in a) {
+                notMatchB << n;
+            }
+        }
+
+        var operation = ChallengeOperation();
+
+        //got extra stuff on A
+        if(notMatchA.count > 0) {
+            //can move something from B
+            if(notMatchB.count > 0) {
+                operation.type = challengeOperationType.move;
+                operation.cost = weights.get(challengeOperationType.move);
+                
+                operation.from = notMatchA[0];
+                operation.to = notMatchB[0];
+
+                newState.exclude(notMatchA[0]);
+                newState << notMatchB[0];
+
+                newState.sort();
+                operation.snapshotAfter = newState;
+            }
+            //can't move so ditch
+            else {
+                operation.type = challengeOperationType.remove;
+                operation.cost = weights.get(challengeOperationType.remove);
+                operation.from = notMatchA[0];
+                operation.to = null;
+
+                newState.exclude(notMatchA[0]);
+
+                newState.sort();
+                operation.snapshotAfter = newState;
+            }
+        } else if(notMatchB.count > 0) {
+            //nothing extra on A, but some stuff still needs to be done to match B, so add
+            operation.type = challengeOperationType.add;
+            operation.cost = weights.get(challengeOperationType.add);
+            
+            operation.from = null;
+            operation.to = notMatchB[0];
+
+            newState << notMatchB[0];
+
+            newState.sort();
+            operation.snapshotAfter = newState;
+        } else {
+            bug("sequences are identical, shouldn't enter here.");
+        }
+        return operation;
+    }
+}

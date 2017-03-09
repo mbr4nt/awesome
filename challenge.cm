@@ -58,6 +58,7 @@ public enum challengeOperationType {
 }
 
 public class ChallengeOperation {
+    public constructor() { }
     public challengeOperationType type;
     public Double from;
     public Double to;
@@ -66,6 +67,67 @@ public class ChallengeOperation {
 }
 
 public class ChallengeResult {
-    public ChallengeOperation[] steps;
+    public constructor() { }
+    
+    public ChallengeOperation[] steps();
     public double totalCost;
+}
+
+public void testChallenge(bool printDetails=false) {
+    str->Challenge candidates();
+
+    candidates.put("Mateus", MateusChallenge());
+
+    (double[])[] standards = [double[]:
+        [double: 1,4,7],
+        [double: 2,4,7],
+        [double: 1,5,8,10],
+        [double: 1,4,8],
+        [double: 3,4,7,8],
+        [double: 1,2],
+        [double: 1,4,9],
+        [double: 3,5,7],
+        [double: 1,7,11]
+    ];
+
+    (double[])[] customs = [double[]:
+        [double: 1,7],
+        [double: 1,6,7],
+        [double: 2,7],
+        [double: 1,3,4,6,7],
+        [double: 1,4,5,6]
+    ];
+
+    for(author, candidate in candidates) {
+        double grandCost = 0;
+
+        pln("################");
+        pln(author);
+        for(custom in customs) {
+            ChallengeResult bestCase = null;
+            double[] bestMatch;
+
+            for(s in standards) {
+                var result = candidate.process(s,custom);
+                if(!bestCase or result.totalCost < bestCase.totalCost) {
+                    bestCase = result;
+                    bestMatch = s;
+                }
+            }
+            if(printDetails) {
+                pln("--------");
+                pln("special: " # custom);
+                pln("closest standard: " # bestMatch);
+                pln("cost: " # bestCase.totalCost);
+            }
+
+            grandCost += bestCase.totalCost;
+        }
+        pln("---------");
+        pln("grand cost: " #grandCost);
+    }
+}
+
+{
+    testChallenge();
 }
