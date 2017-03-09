@@ -46,7 +46,7 @@ public class Challenge {
 
     public challengeOperationType->double weights();
 
-    extend public ChallengeOperation process(double[] a, double[] b) {
+    extend public ChallengeResult process(double[] a, double[] b) {
         return null;
     }
 }
@@ -62,6 +62,7 @@ public class ChallengeOperation {
     public Double from;
     public Double to;
     public double[] snapshotAfter;
+    public double cost;
 }
 
 public class ChallengeResult {
