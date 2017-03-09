@@ -73,7 +73,7 @@ public class ChallengeResult {
     public double totalCost;
 }
 
-public void testChallenge(bool printDetails=false) {
+public void testChallenge(bool printDetails=false, bool printSteps=false) {
     str->Challenge candidates();
 
     candidates.put("Mateus", MateusChallenge());
@@ -91,6 +91,7 @@ public void testChallenge(bool printDetails=false) {
     ];
 
     (double[])[] customs = [double[]:
+        [double: 1,4,7],
         [double: 1,7],
         [double: 1,6,7],
         [double: 2,7],
@@ -119,6 +120,13 @@ public void testChallenge(bool printDetails=false) {
                 pln("special: " # custom);
                 pln("closest standard: " # bestMatch);
                 pln("cost: " # bestCase.totalCost);
+
+                if(printSteps) {
+                    pln("steps:");
+                    for(s in bestCase.steps) {
+                        pln(#s.type; #s.from; #s.to; #s.cost);
+                    }
+                }
             }
 
             grandCost += bestCase.totalCost;
@@ -129,5 +137,5 @@ public void testChallenge(bool printDetails=false) {
 }
 
 {
-    testChallenge();
+    testChallenge(true, true);
 }
