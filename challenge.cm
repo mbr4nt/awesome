@@ -117,14 +117,14 @@ public void testChallenge(bool printDetails=false, bool printSteps=false) {
             }
             if(printDetails) {
                 pln("--------");
-                pln("special: " # custom);
                 pln("closest standard: " # bestMatch);
+                pln("special: " # custom);
                 pln("cost: " # bestCase.totalCost);
 
                 if(printSteps) {
                     pln("steps:");
                     for(s in bestCase.steps) {
-                        pln(#s.type; #s.from; #s.to; #s.cost);
+                        pln(#s.type; #s.from; #s.to; #s.cost; #s.snapshotAfter);
                     }
                 }
             }
