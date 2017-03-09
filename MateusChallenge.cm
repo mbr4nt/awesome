@@ -49,6 +49,7 @@ public class MateusChallenge extends Challenge {
 
         for(s in result.steps) {
             result.totalCost += s.cost;
+            result.totalMoveDistance += s.moveDistance();
         }
         return result;
     }

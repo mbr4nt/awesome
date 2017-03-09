@@ -64,6 +64,11 @@ public class ChallengeOperation {
     public Double to;
     public double[] snapshotAfter;
     public double cost;
+
+    extend public double moveDistance() {
+        if(!to or !from) return 0;
+        return |to.v - from.v|;
+    }
 }
 
 public class ChallengeResult {
@@ -71,6 +76,7 @@ public class ChallengeResult {
     
     public ChallengeOperation[] steps();
     public double totalCost;
+    public double totalMoveDistance;
 }
 
 public void testChallenge(bool printDetails=false, bool printSteps=false) {
@@ -110,7 +116,22 @@ public void testChallenge(bool printDetails=false, bool printSteps=false) {
 
             for(s in standards) {
                 var result = candidate.process(s,custom);
-                if(!bestCase or result.totalCost < bestCase.totalCost) {
+                bool better = false;
+                if(!bestCase) {
+                    better = true;
+                } else {
+                    if(result.totalCost < bestCase.totalCost) {
+                        better = true;
+                    } else {
+                        if(result.totalCost == bestCase.totalCost) {
+                            if(result.totalMoveDistance < bestCase.totalMoveDistance) {
+                                better = true;
+                            }
+                        }
+                    }
+                }
+                
+                if(better) {
                     bestCase = result;
                     bestMatch = s;
                 }
@@ -120,11 +141,12 @@ public void testChallenge(bool printDetails=false, bool printSteps=false) {
                 pln("closest standard: " # bestMatch);
                 pln("special: " # custom);
                 pln("cost: " # bestCase.totalCost);
+                pln("total move: " # bestCase.totalMoveDistance);
 
                 if(printSteps) {
                     pln("steps:");
                     for(s in bestCase.steps) {
-                        pln(#s.type; #s.from; #s.to; #s.cost; #s.snapshotAfter);
+                        pln(#s.type; #s.from; #s.to; #s.cost; #s.moveDistance; #s.snapshotAfter);
                     }
                 }
             }
