@@ -78,12 +78,14 @@ public class MateusChallenge extends Challenge {
             if(notMatchB.count > 0) {
                 operation.type = challengeOperationType.move;
                 operation.cost = weights.get(challengeOperationType.move);
-                
-                operation.from = notMatchA[0];
-                operation.to = notMatchB[0];
 
-                newState.exclude(notMatchA[0]);
-                newState << notMatchB[0];
+                <double, double> bestMove = findBestMove(notMatchA, notMatchB);
+                
+                operation.from = bestMove.v0;
+                operation.to = bestMove.v1;
+
+                newState.exclude(operation.from.v);
+                newState << operation.to.v;
 
                 newState.sort();
                 operation.snapshotAfter = newState;
@@ -116,5 +118,24 @@ public class MateusChallenge extends Challenge {
             bug("sequences are identical, shouldn't enter here.");
         }
         return operation;
+    }
+
+    extend private <double, double> findBestMove(double[] a, double[] b) {
+        <double, double> shortest = null;
+        for(x in a) {
+            for(y in b) {
+                if(!shortest) {
+                    shortest = <x,y>;
+                }
+                else {
+                    double currentDistance = |shortest.v0 - shortest.v1|;
+                    double newDistance = |x - y|;
+                    if(newDistance < currentDistance) {
+                        shortest = <x, y>;
+                    }
+                }
+            }
+        }
+        return shortest;
     }
 }
