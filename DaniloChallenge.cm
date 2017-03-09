@@ -1,0 +1,116 @@
+/** Configura CET Source Copyright Notice (CETSC)
+
+   This file contains Configura CM source code and is part of the
+   Configura CET Development Platform (CETDEV). Configura CM
+   is a programming language created by Configura Sverige AB.
+   Configura, Configura CET and Configura CM are trademarks of
+   Configura Sverige AB. Configura Sverige AB owns Configura CET,
+   Configura CM, and CETDEV.
+
+   Copyright (C) 2004 Configura Sverige AB, All rights reserved.
+
+   You can modify this source file under the terms of the Configura CET
+   Source Licence Agreement (CETSL) as published by Configura Sverige AB.
+
+   Configura Sverige AB has exclusive rights to all changes, modifications,
+   and corrections of this source file. Configura Sverige AB has exclusive
+   rights to any new source file containing material from this source file.
+   A new source file based on this source file or containing material from
+   this source file has to include this Configura CET Source Copyright Notice
+   in its full content. All changes, modifications, and corrections mentioned
+   above shall be reported to Configura Sverige AB within One Month from
+   the date that the modification occurred.
+
+   Configura CM is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the CETSL for more details.
+
+   You should have received a copy of the CETSL along with the CETDEV.
+   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   Tel +46 13377800, Fax +46 13377855,
+   Email: info@configura.com, www.configura.com
+
+   END OF CETSC
+*/
+
+package custom.awesome;
+
+public class DaniloChallenge extends Challenge {
+
+    public ChallengeResult process(double[] a, double[] b) {
+        ChallengeResult r = processInfo(a, b);
+
+        for (step in r.steps) {
+            step.cost = weights.get(step.type);
+            r.totalCost += step.cost; 
+        }
+
+        return r;
+    }
+
+    extend private ChallengeResult processInfo(double[] a, double[] b) {
+        ChallengeResult r();
+        double[] aCopy = a.copy();
+
+        bool done = false;
+        while (done == false) {
+            //Exception: check if no need for removes/changes
+            bool onlyAdds = true;
+            for (i in a) onlyAdds = onlyAdds and b.contains(i);
+
+            if (!onlyAdds) {
+                while (int i=0; i < aCopy.count(); i++) {
+                    if (aCopy.count() > i and b.count() > i and aCopy[i] == b[i]) { 
+                        done = aCopy.count() == i+1;
+                        continue;
+                    }
+                    else {
+                        //1 - Remove
+                        bool bHasItem = b.count() > i;
+                        bool nextIsMatch = bHasItem and aCopy.count() > i+1 and aCopy[i+1] == b[i];
+                        if (nextIsMatch or !bHasItem) {
+                            ChallengeOperation op();
+                            op.type = remove;
+                            op.from = aCopy[i];
+                            op.to = null;
+                            aCopy.exclude(aCopy[i]);
+                            op.snapshotAfter = aCopy.copy;
+                            r.steps << op;
+                            
+                            break;//restarts
+                        //2 - Move
+                        } else {
+                            ChallengeOperation op();
+                            op.type = move;
+                            op.from = aCopy[i];
+                            op.to = b[i];
+                            aCopy[i] = b[i];
+                            op.snapshotAfter = aCopy.copy;
+                            r.steps << op;
+
+                            break;//restarts
+                        }
+                    }
+                }
+            } else {
+                done = true;
+            }
+
+            //3 - Add if there still are items in b
+            if (b.count > aCopy.count) {
+                while (int i=0; i < b.count; i++) if (!aCopy.contains(b[i])) {
+                    ChallengeOperation op();
+                    op.type = add;
+                    op.from = null;
+                    op.to = b[i];
+                    aCopy << b[i];
+                    op.snapshotAfter = aCopy.copy;
+                    r.steps << op;
+                }
+            }
+        }
+
+        return r;
+    }
+}

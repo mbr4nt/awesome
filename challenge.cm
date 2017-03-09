@@ -83,6 +83,7 @@ public void testChallenge(bool printDetails=false, bool printSteps=false) {
     str->Challenge candidates();
 
     candidates.put("Mateus", MateusChallenge());
+    candidates.put("Danilo", DaniloChallenge());
 
     (double[])[] standards = [double[]:
         [double: 1,4,7],
