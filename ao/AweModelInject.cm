@@ -57,24 +57,24 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
             //the data root
             @visibility AweObject root;
 
-            @visibility @modelType model;
+            @visibility @modelType typedModel;
             @visibility constructor(@modelType model) {
                 super();
-                this.model = model;
+                this.typedModel = model;
                 this.root = model;
             }   
             @visibility bool buildQuickProperties(QuickProperties props) { 
                 bool changed = false;
-                if (this.model) {
-                    changed = this.model.buildQuickProperties(..);
+                if (this.typedModel) {
+                    changed = this.typedModel.buildQuickProperties(..);
                 }
                 bool superChanged = super(..);
                 return changed or superChanged;
             }
             
             public bool quickPropertyChanged(QuickProperties props, str key, Object value, bool testChangeOnly) {
-                if (this.model and !testChangeOnly) {
-                    bool changed = this.model.quickPropertyChanged(..);
+                if (this.typedModel and !testChangeOnly) {
+                    bool changed = this.typedModel.quickPropertyChanged(..);
                     this.refresh(true, true);
                     return changed;
                 }
@@ -143,8 +143,8 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
             }
             
             extend public AweProduct{} allProducts() {
-                if(!this.model) return null;
-                return {AweProduct: this.model.getProduct()};
+                if(!this.typedModel) return null;
+                return {AweProduct: this.typedModel.getProduct()};
             }
             
             extend public AweObject[] allModels() {
@@ -226,7 +226,7 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
                         prim.setOwner(pick);
                         
                         //selection highlight
-                        if (m != root and this.model == m and env.reason != fetchReason3D.render) {
+                        if (m != root and this.typedModel == m and env.reason != fetchReason3D.render) {
                             prim = prim.outlinedPrim();
                         }
             
@@ -235,6 +235,7 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
                 }
                 
                 //all << super(..);
+                all.move(-this.localBound().p0);
                 return all;
             }   
             
