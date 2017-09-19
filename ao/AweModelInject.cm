@@ -40,6 +40,8 @@ use cm.runtime;
 use cm.basic;
 use cm.subset;
 
+use cm.abstract.office;
+
 public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=id "extends" @parentType=type '{' @members=[classMember]* '}'  {
 
     SMembers membersBundle(noSrcRef);
@@ -84,7 +86,7 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
                 for (p in this.allProducts()) {
                     p.refresh();
                 }
-                
+
                 if (updateConnectors)  this.updateConnectors();
                 if (tryAlignAllSnapped) this.realign(null);
             
@@ -141,11 +143,16 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
             }
             
             extend public AweProduct{} allProducts() {
-                return {AweProduct: this.model.?getProduct()};
+                if(!this.model) return null;
+                return {AweProduct: this.model.getProduct()};
             }
             
-            extend public AweObject{} allModels() {
-                return {AweObject: this.model};
+            extend public AweObject[] allModels() {
+                AweObject[] list();
+                
+                this.addModels(list, this.root);
+                
+                return list;
             }
             
             extend public Graph get2D() {
@@ -166,6 +173,44 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
             public void drawGraphs(LayerBuffer lb, View view, GeometricFinder finder=null) {
                 this.get2D().?draw(lb);
                 super(..);
+            }
+
+            extend private void addModels(AweObject[] list, AweObject parentModel) {
+                if (parentModel) { 
+                    if (parentModel in list) return;
+        
+                    list << parentModel;
+                    
+                    for (key, propValue in parentModel.props) {
+                        if (propValue == null) continue;
+                        
+                        if (propValue as AweObject) {
+                            this.addModels(list, propValue);
+                        }
+                        else {
+                            var iteratorBase = propValue.?class.?iterator.?instantiate();
+        
+                            aweTryCast (iteratorBase as iterator to SeqIterator, SetIterator) {
+                                iterator.init(propValue);
+                                
+                                while (iterator.step()) {
+                                    AweObject obj = iterator.get.AweObject;
+                                    this.addModels(list, obj);
+                                }
+                            }
+                            else { 
+                                if (iteratorBase as MapIterator) { 
+                                    iteratorBase.init(propValue);
+        
+                                    while (iteratorBase.step()) {
+                                        AweObject obj = iteratorBase.v.AweObject;
+                                        this.addModels(list, obj);
+                                    } 
+                                }
+                            }
+                        }
+                    }
+                }
             }
             
             public Primitive3D get3D(FetchEnv3D env) {
@@ -189,12 +234,12 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
                     }
                 }
                 
-                all << super(..);
+                //all << super(..);
                 return all;
             }   
             
             extend public AweProduct getProductForModel(AweObject model) {
-                return model.getProduct();
+                return model.?getProduct();
             }
 
             public box localBound() {    
@@ -202,7 +247,7 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
         
                 for (p in allProducts) {
                     if (p) {
-                        b += p.localBound;
+                        b += p.localBound();
                     }
                 }
                 
@@ -252,7 +297,7 @@ public class ThingProduct extends AweProduct {
     }
 }
 
-public aweInjectedSnapper<OneThing> SomeSnapper extends Snapper {
+public aweInjectedSnapper<OneThing> SomeSnapper extends PanelFrame {
     
 }
 
