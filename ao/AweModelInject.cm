@@ -1,0 +1,261 @@
+/** Configura CET Source Copyright Notice (CETSC)
+
+   This file contains Configura CM source code and is part of the
+   Configura CET Development Platform (CETDEV). Configura CM
+   is a programming language created by Configura Sverige AB.
+   Configura, Configura CET and Configura CM are trademarks of
+   Configura Sverige AB. Configura Sverige AB owns Configura CET,
+   Configura CM, and CETDEV.
+
+   Copyright (C) 2004 Configura Sverige AB, All rights reserved.
+
+   You can modify this source file under the terms of the Configura CET
+   Source Licence Agreement (CETSL) as published by Configura Sverige AB.
+
+   Configura Sverige AB has exclusive rights to all changes, modifications,
+   and corrections of this source file. Configura Sverige AB has exclusive
+   rights to any new source file containing material from this source file.
+   A new source file based on this source file or containing material from
+   this source file has to include this Configura CET Source Copyright Notice
+   in its full content. All changes, modifications, and corrections mentioned
+   above shall be reported to Configura Sverige AB within One Month from
+   the date that the modification occurred.
+
+   Configura CM is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+   See the CETSL for more details.
+
+   You should have received a copy of the CETSL along with the CETDEV.
+   If not, write to Configura Sverige AB, Box 306, SE-581 02 Linköping, Sweden.
+   Tel +46 13377800, Fax +46 13377855,
+   Email: info@configura.com, www.configura.com
+
+   END OF CETSC
+*/
+
+package custom.awesome.ao;
+use cm.syntax;
+use cm.runtime;
+use cm.basic;
+use cm.subset;
+
+public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=id "extends" @parentType=type '{' @members=[classMember]* '}'  {
+
+    SMembers membersBundle(noSrcRef);
+    for(m in members) {
+        membersBundle << m;
+    }
+
+    SId middleTypeName = SId(parentType.name # "Parent");
+
+    definition {
+        @visibility class @middleTypeName extends @parentType {
+
+            //the data root
+            @visibility AweObject root;
+
+            @visibility @modelType model;
+            @visibility constructor(@modelType model) {
+                super();
+                this.model = model;
+                this.root = model;
+            }   
+            @visibility bool buildQuickProperties(QuickProperties props) { 
+                bool changed = false;
+                if (this.model) {
+                    changed = this.model.buildQuickProperties(..);
+                }
+                bool superChanged = super(..);
+                return changed or superChanged;
+            }
+            
+            public bool quickPropertyChanged(QuickProperties props, str key, Object value, bool testChangeOnly) {
+                if (this.model and !testChangeOnly) {
+                    bool changed = this.model.quickPropertyChanged(..);
+                    this.refresh(true, true);
+                    return changed;
+                }
+                return super(..);
+            }
+            
+            extend public void refresh(bool updateConnectors=false, bool tryAlignAllSnapped=false) {
+
+                for (p in this.allProducts()) {
+                    p.refresh();
+                }
+                
+                if (updateConnectors)  this.updateConnectors();
+                if (tryAlignAllSnapped) this.realign(null);
+            
+                invalidateQuickPropertiesFor(this);
+                invalidate();
+                this.space.invalidateSelection();
+            }
+            
+            /**
+             * Loops through all connected snappers and try to realign them just like 
+             * (re)alignAllSnapped would do except it will check individually if that
+             * connector should realign (realign property of the connector)
+             * It also triggers realign on all connected snappers that have the realign method 
+             */
+             extend public void realign(Snapper{} visited=null) {
+                if (!visited) {
+                    visited = {Snapper: this};
+                }
+                else {
+                    if (this in visited) return;
+                    
+                    visited << this;
+                }
+            
+                for (attach in this.connectors()) {
+                    if(attach) {
+                        var realign = aweDynamicCall attach.shouldRealign();
+                        var connections = attach.connections() ? attach.connections() : {Connector: attach.connection()};
+            
+                        if (connections != null) {
+                            if (realign.?bool) {
+                                for (connection in connections) if(connection) {
+                                    alignConnectors(connection, attach, visited=null, invalidate3D=false, removeFromBsp=false, tryRealign=true, forcePropagate=false);
+                                    
+                                    var snapper = connection.snapper;
+                                    if(snapper) {
+                                        aweDynamicCall snapper.realign(visited);
+                                    }
+                                }
+                            }
+            
+                            for (connection in connections) {
+                                var realignConnected = aweDynamicCall connection.shouldRealign();
+            
+                                if (realignConnected.?bool) {
+                                    var other = attach;
+            
+                                    alignConnectors(other, connection, visited=null, invalidate3D=false, removeFromBsp=false, tryRealign=true, forcePropagate=false);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            extend public AweProduct{} allProducts() {
+                return {AweProduct: this.model.?getProduct()};
+            }
+            
+            extend public AweObject{} allModels() {
+                return {AweObject: this.model};
+            }
+            
+            extend public Graph get2D() {
+                AweGraph graph();
+                var allP = this.allProducts();
+                
+                if (allP) {
+                    for (p in allP) { 
+                        if (Graph g = p.get2D()) { 
+                            graph << g;
+                        }
+                    }
+                }
+            
+                return graph;
+            }
+            
+            public void drawGraphs(LayerBuffer lb, View view, GeometricFinder finder=null) {
+                this.get2D().?draw(lb);
+                super(..);
+            }
+            
+            public Primitive3D get3D(FetchEnv3D env) {
+                Awe3D all();
+            
+                for (m in allModels) {
+                    if (AweProduct product = getProductForModel(m)) {
+                        var prim = product.get3D(env);
+            
+                        AweBindingSnapperPickSurface pick(this, prim, m.class.name);
+                        
+                        pick.configurator = m;
+                        prim.setOwner(pick);
+                        
+                        //selection highlight
+                        if (m != root and this.model == m and env.reason != fetchReason3D.render) {
+                            prim = prim.outlinedPrim();
+                        }
+            
+                        all << prim;
+                    }
+                }
+                
+                all << super(..);
+                return all;
+            }   
+            
+            extend public AweProduct getProductForModel(AweObject model) {
+                return model.getProduct();
+            }
+
+            public box localBound() {    
+                box b;
+        
+                for (p in allProducts) {
+                    if (p) {
+                        b += p.localBound;
+                    }
+                }
+                
+                return b;
+            }
+        } 
+    
+        @visibility class @name extends @middleTypeName {
+            @membersBundle;
+        }
+        
+        
+
+    };
+}
+
+/*********** testing ***********/
+public aweObject OneThing {
+    props(
+        double size = 1
+    );
+
+    public aweObjectDomain(
+        distance size = DistanceEnum(1,2,3)
+    );
+
+    public AweProduct createProduct() {
+        return new ThingProduct(this);
+    }
+}
+
+public class ThingProduct extends AweProduct {
+    public AweModel<OneThing> model;
+
+    public box localBound() {
+        return box(point(), (model.size, model.size, model.size));
+    }
+
+    public Primitive3D medium3D() {
+        var b = new Box3D(this.localBound());
+        b.setMaterial(birchMaterial3D());
+        return b;
+    }
+
+    public Graph graph() {
+        return GRect(this.localBound().rect);
+    }
+}
+
+public aweInjectedSnapper<OneThing> SomeSnapper extends Snapper {
+    
+}
+
+{
+    new SomeSnapper(new OneThing()).launch();
+}
