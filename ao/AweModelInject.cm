@@ -142,9 +142,16 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
                 }
             }
             
-            extend public AweProduct{} allProducts() {
-                if(!this.typedModel) return null;
-                return {AweProduct: this.typedModel.getProduct()};
+            extend public AweProduct[] allProducts() {
+                AweProduct[] list();
+        
+                for (m in this.allModels()) {
+                    if (AweProduct product = getProductForModel(m)) {
+                        list << product;
+                    }
+                }
+        
+                return list;
             }
             
             extend public AweObject[] allModels() {
@@ -235,8 +242,8 @@ public definition @visibility aweInjectedSnapper '<' @modelType=type '>' @name=i
                 }
                 
                 //all << super(..);
-                all.move(-this.localBound().p0);
-                return all;
+                all.move(-this.root.getProduct().localBound().p0);
+                return safeInstance3D([Primitive3D:all]);
             }   
             
             extend public AweProduct getProductForModel(AweObject model) {
