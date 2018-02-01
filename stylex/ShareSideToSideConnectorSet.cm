@@ -49,7 +49,13 @@ public class ShareSideToSideConnectorSet extends AweConnectorSet {
     
     public void connectors(AweConnectorCache cc, bool ghostMode) {  
         var path = model.extrusionPath();
-        cc.makePoint("start", path.startPoint.point, path.startTangent() + 180deg, magnets= { AweMagnet: magnet(ShareSideToSide+) });
-        cc.makePoint("end", path.endPoint.point, path.endTangent(), magnets= { AweMagnet: magnet(ShareSideToSide-) });
+        //leave a small gap to separate items
+        var gap = 0.3inch;
+
+        var startTangent = path.startTangent() + 180deg; //this one needs to flip back
+        var endTangent = path.endTangent();
+
+        cc.makePoint("start", (path.startPoint + point2D(startTangent, gap)).point, startTangent, magnets= { AweMagnet: magnet(ShareSideToSide+) });
+        cc.makePoint("end", (path.endPoint + point2D(endTangent, gap)).point, endTangent, magnets= { AweMagnet: magnet(ShareSideToSide-) });
     }
 }
