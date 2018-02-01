@@ -452,6 +452,7 @@ public class AweObject {
 
     extend private AweMaterialOptionFinder getMaterialFinder() {
         if (!this.materialFinder) {
+            return null;//pobrema
             if (?AweSnapper snapper = this.mainSnapper) {
                 this.materialFinder = new AweMaterialOptionFinder(snapper.getSifCatalogsInstance(), snapper.getMaterialFactoryInstance());
             }
